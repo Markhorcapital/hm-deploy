@@ -1,3 +1,4 @@
+import os
 import re
 import time
 
@@ -10,6 +11,11 @@ initialize_st_page(icon="🙌", show_readme=False)
 
 # Initialize backend client
 backend_api_client = get_backend_api_client()
+
+
+def get_default_hummingbot_image():
+    """Get the default Hummingbot image from environment variable or fallback to latest"""
+    return os.getenv("HUMMINGBOT_IMAGE", "hummingbot/hummingbot:latest")
 
 
 def get_controller_configs():
@@ -137,12 +143,14 @@ with st.container(border=True):
             all_images = backend_api_client.docker.get_available_images("hummingbot")
             available_images = filter_hummingbot_images(all_images)
 
+            # Get default image from environment variable
+            default_image = get_default_hummingbot_image()
+            
             if not available_images:
                 # Fallback to default if no hummingbot images found
-                available_images = ["hummingbot/hummingbot:latest"]
+                available_images = [default_image]
 
             # Ensure default image is in the list
-            default_image = "hummingbot/hummingbot:latest"
             if default_image not in available_images:
                 available_images.insert(0, default_image)
 
@@ -156,7 +164,7 @@ with st.container(border=True):
             st.error(f"Failed to fetch available images: {e}")
             image_name = st.text_input(
                 "Hummingbot Image",
-                value="hummingbot/hummingbot:latest",
+                value=get_default_hummingbot_image(),
                 key="image_input"
             )
 

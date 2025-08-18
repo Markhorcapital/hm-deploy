@@ -1,0 +1,37 @@
+buy_spreads:
+- 0.002
+- 0.005
+- 0.008
+sell_spreads:
+- 0.0001
+- 0.0003
+- 0.0005
+buy_amounts_pct:
+- 0.1282
+- 0.1666
+- 0.2051
+sell_amounts_pct:
+- 0.1282
+- 0.1666
+- 0.2051
+candles_config: []
+connector_name: gate_io
+controller_name: pmm_simple
+controller_type: mrket_making
+cooldown_time: 900.0
+executor_refresh_time: 900.0
+id: Pmm_simple_bearish
+leverage: 1
+manual_kill_switch: false
+position_mode: ONEWAY
+position_rebalance_threshold_pct: 0.05
+skip_rebalance: false
+stop_loss: 0.01
+take_profit: 0.05
+take_profit_order_type: 1
+time_limit: 43200
+total_amount_quote: 800
+trading_pair: ALI-USDT
+trailing_stop:
+  activation_price: 0.02
+  trailing_delta: 0.002
