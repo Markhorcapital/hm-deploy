@@ -1,0 +1,5 @@
+candles_config: []
+controllers_config:
+- future-swallow_0.1.yml
+markets: {}
+script_file_name: v2_with_controllers.py

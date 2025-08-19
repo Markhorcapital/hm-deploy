@@ -128,42 +128,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# =================================================================
-# 🚨 HUMMINGBOT SECURITY - DO NOT COMMIT THESE FILES
-# =================================================================
-
-# Bot credentials and private keys
-bots/credentials/
-!bots/credentials/.gitignore
-
-# Bot configurations (may contain sensitive data)
-bots/conf/controllers/*.yml
-!bots/conf/controllers/.gitignore
-
-# Bot instances
-bots/instances/
-!bots/instances/.gitignore
-
-# Environment configuration
-.env
-credentials.yml
-
-# Password verification files
-**/.password_verification
-
-# Any YAML/JSON config files in bots directory
-bots/**/*.yml
-bots/**/*.yaml
-bots/**/*.json
-
-# Backup files
-*.backup
-docker-compose.yml.backup
-
-# Log files
-*.log
-logs/
-
 # Spyder project settings
 .spyderproject
 .spyproject
