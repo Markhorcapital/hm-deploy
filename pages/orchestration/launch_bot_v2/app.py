@@ -14,8 +14,8 @@ backend_api_client = get_backend_api_client()
 
 
 def get_default_hummingbot_image():
-    """Get the default Hummingbot image from environment variable or fallback to latest"""
-    return os.getenv("HUMMINGBOT_IMAGE", "hummingbot/hummingbot:latest")
+    """Get the default Hummingbot image from environment variable or fallback to custom"""
+    return os.getenv("HUMMINGBOT_IMAGE", "hummingbot/hummingbot:custom")
 
 
 def get_controller_configs():
@@ -28,18 +28,41 @@ def get_controller_configs():
 
 
 def filter_hummingbot_images(images):
-    """Filter images to only show Hummingbot-related ones."""
+    """Filter images to only show Hummingbot-related ones, excluding latest version."""
     hummingbot_images = []
     pattern = r'.+/hummingbot:'
+    
+    # Define patterns to exclude
+    exclude_patterns = [
+        "hummingbot/hummingbot:latest",
+        ":latest",
+        "latest"
+    ]
 
     for image in images:
         try:
             if re.match(pattern, image):
-                hummingbot_images.append(image)
+                # Check if image should be excluded
+                should_exclude = False
+                for exclude_pattern in exclude_patterns:
+                    if exclude_pattern.lower() in image.lower():
+                        should_exclude = True
+                        break
+                
+                if not should_exclude:
+                    hummingbot_images.append(image)
         except Exception:
             continue
 
-    return hummingbot_images
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_images = []
+    for image in hummingbot_images:
+        if image not in seen:
+            seen.add(image)
+            unique_images.append(image)
+    
+    return unique_images
 
 
 def launch_new_bot(bot_name, image_name, credentials, selected_controllers, max_global_drawdown,
