@@ -106,6 +106,12 @@ BANNED_TOKENS=$BANNED_TOKENS
 # =================================================================
 BOTS_PATH=$BOTS_PATH
 
+# =================================================================
+# 🐳 Docker Image Configuration
+# =================================================================
+# Use custom local hummingbot image with crypto.com connector
+HUMMINGBOT_IMAGE=hummingbot-custom:local
+
 EOF
 
 echo -e "${GREEN}✅ .env file created successfully!${NC}"
@@ -119,9 +125,17 @@ if [ -f "docker-compose.yml" ]; then
     # Create a backup of the original file
     cp docker-compose.yml docker-compose.yml.backup
     
-    # Update the credentials using sed
-    sed -i "s/BACKEND_API_USERNAME=.*/BACKEND_API_USERNAME=$USERNAME/" docker-compose.yml
-    sed -i "s/BACKEND_API_PASSWORD=.*/BACKEND_API_PASSWORD=$PASSWORD/" docker-compose.yml
+    # Update the credentials using sed (macOS compatible)
+    # Detect if we're on macOS or Linux
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS - requires empty string after -i
+        sed -i "" "s/BACKEND_API_USERNAME=.*/BACKEND_API_USERNAME=$USERNAME/" docker-compose.yml
+        sed -i "" "s/BACKEND_API_PASSWORD=.*/BACKEND_API_PASSWORD=$PASSWORD/" docker-compose.yml
+    else
+        # Linux - no argument after -i
+        sed -i "s/BACKEND_API_USERNAME=.*/BACKEND_API_USERNAME=$USERNAME/" docker-compose.yml
+        sed -i "s/BACKEND_API_PASSWORD=.*/BACKEND_API_PASSWORD=$PASSWORD/" docker-compose.yml
+    fi
     
     echo -e "${GREEN}✅ docker-compose.yml updated successfully!${NC}"
     echo -e "${BLUE}📋 Updated credentials:${NC} Username: $USERNAME, Password: $PASSWORD"
@@ -149,14 +163,12 @@ fi
 echo ""
 echo -e "${GREEN}🐳 Pulling required Docker images...${NC}"
 
-# Pull Docker images in parallel
-docker compose pull &
-docker pull hummingbot/hummingbot:latest &
+# Pull only the docker-compose services (dashboard, API, etc.)
+# Skip pulling hummingbot/hummingbot:latest since we're using a local custom image
+docker compose pull
 
-# Wait for both operations to complete
-wait
-
-echo -e "${GREEN}✅ All Docker images pulled successfully!${NC}"
+echo -e "${GREEN}✅ Docker images pulled successfully!${NC}"
+echo -e "${BLUE}ℹ️  Using local hummingbot image: ${CYAN}hummingbot-custom:local${NC}"
 echo ""
 
 # Check if password verification file exists

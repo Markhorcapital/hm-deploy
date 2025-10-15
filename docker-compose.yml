@@ -5,16 +5,16 @@ services:
     ports:
       - "8501:8501"
     environment:
-        - AUTH_SYSTEM_ENABLED=False
-        - BACKEND_API_HOST=hummingbot-api
-        - BACKEND_API_PORT=8000
-        - BACKEND_API_USERNAME=admin
-        - BACKEND_API_PASSWORD=admin
+      - AUTH_SYSTEM_ENABLED=False
+      - BACKEND_API_HOST=hummingbot-api
+      - BACKEND_API_PORT=8000
+      - BACKEND_API_USERNAME=admin
+      - BACKEND_API_PASSWORD=nHXseC!tjianS3ze
     volumes:
       - ./credentials.yml:/home/dashboard/credentials.yml
       - ./pages:/home/dashboard/frontend/pages
     networks:
-        - emqx-bridge
+      - emqx-bridge
   hummingbot-api:
     container_name: hummingbot-api
     image: hummingbot/hummingbot-api:latest
@@ -23,6 +23,7 @@ services:
     volumes:
       - ./bots:/hummingbot-api/bots
       - /var/run/docker.sock:/var/run/docker.sock
+      - /Users/zia/Downloads/Markhor/markhorHB/hummingbot/hummingbot/connector/exchange/crypto_com:/opt/conda/envs/hummingbot-api/lib/python3.12/site-packages/hummingbot/connector/exchange/crypto_com
     env_file:
       - .env
     environment:
@@ -48,19 +49,19 @@ services:
       - emqx-log:/opt/emqx/log
       - emqx-etc:/opt/emqx/etc
     ports:
-      - "1883:1883"  # mqtt:tcp
-      - "8883:8883"  # mqtt:tcp:ssl
-      - "8083:8083"  # mqtt:ws
-      - "8084:8084"  # mqtt:ws:ssl
-      - "8081:8081"  # http:management
-      - "18083:18083"  # http:dashboard
-      - "61613:61613"  # web-stomp gateway
+      - "1883:1883" # mqtt:tcp
+      - "8883:8883" # mqtt:tcp:ssl
+      - "8083:8083" # mqtt:ws
+      - "8084:8084" # mqtt:ws:ssl
+      - "8081:8081" # http:management
+      - "18083:18083" # http:dashboard
+      - "61613:61613" # web-stomp gateway
     networks:
       emqx-bridge:
         aliases:
           - node1.emqx.local
     healthcheck:
-      test: [ "CMD", "/opt/emqx/bin/emqx_ctl", "status" ]
+      test: ["CMD", "/opt/emqx/bin/emqx_ctl", "status"]
       interval: 5s
       timeout: 25s
       retries: 5
@@ -90,7 +91,7 @@ networks:
     driver: bridge
 
 volumes:
-  emqx-data: { }
-  emqx-log: { }
-  emqx-etc: { }
-  postgres-data: { }
+  emqx-data: {}
+  emqx-log: {}
+  emqx-etc: {}
+  postgres-data: {}

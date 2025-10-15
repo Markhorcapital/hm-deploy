@@ -18,6 +18,52 @@ This deployment includes:
 
 All services are orchestrated using Docker Compose for seamless deployment and management.
 
+## Using Custom Hummingbot Image
+
+If you have modified the Hummingbot source code, you need to build a local Docker image and configure the deployment to use it:
+
+### 1. Build Your Custom Hummingbot Image
+
+Navigate to your hummingbot directory and build the Docker image:
+
+```bash
+cd /path/to/your/hummingbot
+docker build -t hummingbot-custom:local .
+```
+
+This creates a local Docker image tagged as `hummingbot-custom:local` with your modifications.
+
+### 2. Run the Setup Script
+
+The setup script has been configured to automatically use `hummingbot-custom:local` instead of pulling from Docker Hub:
+
+```bash
+cd /path/to/hm-deploy
+bash setup.sh
+```
+
+The script will:
+- Create a `.env` file with `HUMMINGBOT_IMAGE=hummingbot-custom:local`
+- Skip pulling the default hummingbot image from Docker Hub
+- Use your local image when deploying bots
+
+### 3. Verify the Configuration
+
+After running setup, check that the `.env` file contains:
+
+```bash
+HUMMINGBOT_IMAGE=hummingbot-custom:local
+```
+
+Now when you deploy bots through the dashboard, they will use your custom image with the crypto.com connector.
+
+**Note:** If you make changes to your hummingbot code, rebuild the image with the same tag:
+
+```bash
+cd /path/to/your/hummingbot
+docker build -t hummingbot-custom:local .
+```
+
 ## Installation
 
 1. **Clone the repository:**
@@ -47,7 +93,8 @@ All services are orchestrated using Docker Compose for seamless deployment and m
    - Go to the tab PMM Simple and create a new configuration. Soon will be released a video explaining how the strategy works.
 
 5. **Deploy the configuration**
-   - Go to the Deploy tab, select a name for your bot, the image hummingbot/hummingbot:latest and the configuration you just created.
+   - Go to the Deploy tab, select a name for your bot and the configuration you just created.
+   - The system will automatically use the configured Docker image (either `hummingbot-custom:local` if you built a custom image, or the default `hummingbot/hummingbot:latest`).
    - Press the button to create a new instance.
 
 6. **Check the status of the bot**
