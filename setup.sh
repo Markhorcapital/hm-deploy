@@ -107,10 +107,9 @@ BANNED_TOKENS=$BANNED_TOKENS
 BOTS_PATH=$BOTS_PATH
 
 # =================================================================
-# 🐳 Docker Image Configuration
+# 🐳 Dynamic Image Configuration  
 # =================================================================
-# Use custom local hummingbot image with crypto.com connector
-HUMMINGBOT_IMAGE=hummingbot-custom:local
+# These will be set based on what images are available locally
 
 EOF
 
@@ -163,12 +162,58 @@ fi
 echo ""
 echo -e "${GREEN}🐳 Pulling required Docker images...${NC}"
 
-# Pull only the docker-compose services (dashboard, API, etc.)
-# Skip pulling hummingbot/hummingbot:latest since we're using a local custom image
-docker compose pull
+# Set image environment variables based on what's available locally
+echo "🔍 Detecting available images..."
 
-echo -e "${GREEN}✅ Docker images pulled successfully!${NC}"
-echo -e "${BLUE}ℹ️  Using local hummingbot image: ${CYAN}hummingbot-custom:local${NC}"
+# Check hummingbot-api image
+if docker image inspect hummingbot/hummingbot-api:custom >/dev/null 2>&1; then
+    echo "HUMMINGBOT_API_IMAGE=hummingbot/hummingbot-api:custom" >> .env
+    echo "✅ Using local hummingbot/hummingbot-api:custom"
+else
+    echo "HUMMINGBOT_API_IMAGE=hummingbot/hummingbot-api:latest" >> .env
+    echo "📦 Will use hummingbot/hummingbot-api:latest"
+fi
+
+# Check dashboard image  
+if docker image inspect hummingbot/dashboard:custom >/dev/null 2>&1; then
+    echo "DASHBOARD_IMAGE=hummingbot/dashboard:custom" >> .env
+    echo "✅ Using local hummingbot/dashboard:custom"
+else
+    echo "DASHBOARD_IMAGE=hummingbot/dashboard:latest" >> .env
+    echo "📦 Will use hummingbot/dashboard:latest"
+fi
+
+# Check hummingbot bot image
+if docker image inspect hummingbot/hummingbot:custom >/dev/null 2>&1; then
+    echo "HUMMINGBOT_BOT_IMAGE=hummingbot/hummingbot:custom" >> .env
+    echo "✅ Using local hummingbot/hummingbot:custom"
+else
+    echo "HUMMINGBOT_BOT_IMAGE=hummingbot/hummingbot:latest" >> .env
+    echo "📦 Will use hummingbot/hummingbot:latest"
+fi
+
+# Pull only the images we need from Docker Hub (skip custom ones that exist locally)
+echo "📦 Pulling required images from Docker Hub..."
+docker pull postgres:15 >/dev/null 2>&1 &
+docker pull emqx:5 >/dev/null 2>&1 &
+
+# Only pull images that we're not using custom versions of
+if ! docker image inspect hummingbot/hummingbot-api:custom >/dev/null 2>&1; then
+    docker pull hummingbot/hummingbot-api:latest >/dev/null 2>&1 &
+fi
+
+if ! docker image inspect hummingbot/dashboard:custom >/dev/null 2>&1; then
+    docker pull hummingbot/dashboard:latest >/dev/null 2>&1 &
+fi
+
+if ! docker image inspect hummingbot/hummingbot:custom >/dev/null 2>&1; then
+    docker pull hummingbot/hummingbot:latest >/dev/null 2>&1 &
+fi
+
+# Wait for all pulls to complete
+wait
+
+echo -e "${GREEN}✅ All Docker images pulled successfully!${NC}"
 echo ""
 
 # Check if password verification file exists

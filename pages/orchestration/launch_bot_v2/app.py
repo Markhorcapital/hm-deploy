@@ -1,3 +1,4 @@
+import os
 import re
 import time
 
@@ -12,6 +13,11 @@ initialize_st_page(icon="🙌", show_readme=False)
 backend_api_client = get_backend_api_client()
 
 
+def get_default_hummingbot_image():
+    """Get the default Hummingbot image from environment variable or fallback to custom"""
+    return os.getenv("HUMMINGBOT_IMAGE", "hummingbot/hummingbot:custom")
+
+
 def get_controller_configs():
     """Get all controller configurations using the new API."""
     try:
@@ -22,19 +28,42 @@ def get_controller_configs():
 
 
 def filter_hummingbot_images(images):
-    """Filter images to only show Hummingbot-related ones."""
+    """Filter images to only show Hummingbot-related ones, excluding latest version."""
     hummingbot_images = []
     # Accept both official (org/hummingbot:) and custom (hummingbot-*:) images
     pattern = r'(.+/hummingbot:|hummingbot[-\w]*:)'
+    
+    # Define patterns to exclude
+    exclude_patterns = [
+        "hummingbot/hummingbot:latest",
+        ":latest",
+        "latest"
+    ]
 
     for image in images:
         try:
             if re.match(pattern, image):
-                hummingbot_images.append(image)
+                # Check if image should be excluded
+                should_exclude = False
+                for exclude_pattern in exclude_patterns:
+                    if exclude_pattern.lower() in image.lower():
+                        should_exclude = True
+                        break
+                
+                if not should_exclude:
+                    hummingbot_images.append(image)
         except Exception:
             continue
 
-    return hummingbot_images
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_images = []
+    for image in hummingbot_images:
+        if image not in seen:
+            seen.add(image)
+            unique_images.append(image)
+    
+    return unique_images
 
 
 def launch_new_bot(bot_name, image_name, credentials, selected_controllers, max_global_drawdown,
@@ -138,12 +167,14 @@ with st.container(border=True):
             all_images = backend_api_client.docker.get_available_images("hummingbot")
             available_images = filter_hummingbot_images(all_images)
 
+            # Get default image from environment variable
+            default_image = get_default_hummingbot_image()
+            
             if not available_images:
                 # Fallback to default if no hummingbot images found
-                available_images = ["hummingbot/hummingbot:latest"]
+                available_images = [default_image]
 
             # Ensure default image is in the list
-            default_image = "hummingbot/hummingbot:latest"
             if default_image not in available_images:
                 available_images.insert(0, default_image)
 
@@ -157,7 +188,7 @@ with st.container(border=True):
             st.error(f"Failed to fetch available images: {e}")
             image_name = st.text_input(
                 "Hummingbot Image",
-                value="hummingbot/hummingbot:latest",
+                value=get_default_hummingbot_image(),
                 key="image_input"
             )
 
