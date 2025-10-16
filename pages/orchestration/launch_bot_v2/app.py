@@ -24,7 +24,8 @@ def get_controller_configs():
 def filter_hummingbot_images(images):
     """Filter images to only show Hummingbot-related ones."""
     hummingbot_images = []
-    pattern = r'.+/hummingbot:'
+    # Accept both official (org/hummingbot:) and custom (hummingbot-*:) images
+    pattern = r'(.+/hummingbot:|hummingbot[-\w]*:)'
 
     for image in images:
         try:
