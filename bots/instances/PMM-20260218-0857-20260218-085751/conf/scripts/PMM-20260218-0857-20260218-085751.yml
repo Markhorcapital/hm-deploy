@@ -1,7 +1,0 @@
-candles_config: []
-controllers_config:
-- PMM_Dynamic_0.1.yml
-markets: {}
-max_controller_drawdown_quote: 800.0
-max_global_drawdown_quote: 500.0
-script_file_name: v2_with_controllers.py
