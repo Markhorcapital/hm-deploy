@@ -166,3 +166,7 @@ bots/data/
 bots/archived/
 *.sqlite
 *.sqlite-journal
+
+# Conf scripts and controllers yml (runtime/generated)
+bots/conf/scripts/*.yml
+bots/conf/controllers/*.yml

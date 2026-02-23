@@ -114,6 +114,7 @@ class PMMDynamicController(MarketMakingControllerBase):
     The spread increment amount is specified by volatility_spread_increment_pct parameter.
     It also uses the Triple Barrier Strategy to manage the risk.
     """
+
     def __init__(self, config: PMMDynamicControllerConfig, *args, **kwargs):
         self.config = config
         # Use max of natr_length and rsi_length for max_records calculation
@@ -132,7 +133,7 @@ class PMMDynamicController(MarketMakingControllerBase):
         # Only use volatility_reference_pair (e.g., ETH-USDT) for NATR/RSI calculation
         # No fallback - if volatility_reference_pair candles are not available, skip NATR/RSI
         volatility_pair = self.config.volatility_reference_pair
-        
+
         # Get reference price for trading pair (always needed for order placement)
         from hummingbot.core.data_type.common import PriceType
         try:
@@ -152,7 +153,7 @@ class PMMDynamicController(MarketMakingControllerBase):
                 "features": pd.DataFrame()
             }
             return
-        
+
         # Try to fetch candles for volatility reference pair ONLY
         try:
             candles = self.market_data_provider.get_candles_df(
@@ -161,7 +162,7 @@ class PMMDynamicController(MarketMakingControllerBase):
                 interval=self.config.interval,
                 max_records=self.max_records
             )
-            
+
             # Validate candles DataFrame
             if candles is None or len(candles) == 0:
                 self.logger().warning(
@@ -177,7 +178,7 @@ class PMMDynamicController(MarketMakingControllerBase):
                     "features": pd.DataFrame()
                 }
                 return
-            
+
         except Exception as e:
             self.logger().error(
                 f"Error fetching candles for {volatility_pair}: {str(e)}. "
@@ -192,7 +193,7 @@ class PMMDynamicController(MarketMakingControllerBase):
                 "features": pd.DataFrame()
             }
             return
-        
+
         # Check if required columns exist
         required_columns = ["high", "low", "close"]
         missing_columns = [col for col in required_columns if col not in candles.columns]
@@ -210,7 +211,7 @@ class PMMDynamicController(MarketMakingControllerBase):
                 "features": pd.DataFrame()
             }
             return
-        
+
         # Log candle count for debugging
         num_candles = len(candles)
         if num_candles < self.config.natr_length:
@@ -218,11 +219,13 @@ class PMMDynamicController(MarketMakingControllerBase):
                 f"Insufficient candles for NATR calculation: {num_candles} candles available, "
                 f"but {self.config.natr_length} required. Using available candles."
             )
-        
+
         # Calculate NATR using pandas_ta (original hummingbot implementation)
-        natr_raw = ta.natr(candles["high"], candles["low"], candles["close"], 
-                          length=self.config.natr_length)
-        
+        natr_raw = ta.natr(
+            candles["high"], candles["low"], candles["close"],
+            length=self.config.natr_length
+        )
+
         # Check if NATR calculation returned None or invalid result
         if natr_raw is None:
             self.logger().warning("NATR calculation returned None. Using default value.")
@@ -235,25 +238,28 @@ class PMMDynamicController(MarketMakingControllerBase):
         else:
             # Divide by 100 to convert from 0-100 range to 0-1 range
             natr = natr_raw / 100
-            
+
             # Get current NATR value
             current_natr = natr.iloc[-1]
-        
+
         # Handle NaN or invalid NATR
         if pd.isna(current_natr) or current_natr <= 0:
             current_natr = 0.001  # Default 1% if invalid
-        
+
         # Calculate NATR statistics for reference (not used for detection)
-        natr_mean = natr.mean()
-        natr_std = natr.std()
-        
+        # natr_mean = natr.mean()
+        # natr_std = natr.std()
+
         # Check if volatility is detected (current NATR percentage is above threshold)
         volatility_detected = False
         natr_exceeded_limit = False  # Flag to track if NATR exceeds upper limit
-        
+
         # Convert NATR to percentage (0-1 range to 0-100 range) and compare directly
         current_natr_percentage = current_natr * 100  # Convert to percentage
-        
+
+        # Print NATR value
+        self.logger().info(f"[NATR] Current NATR: {current_natr_percentage:.4f}%")
+
         if not pd.isna(current_natr_percentage):
             # Check if NATR exceeds upper limit (stop orders)
             if current_natr_percentage >= self.config.natr_upper_limit:
@@ -266,20 +272,20 @@ class PMMDynamicController(MarketMakingControllerBase):
             # If NATR percentage is above threshold (but below upper limit), volatility is detected
             elif current_natr_percentage >= self.config.volatility_threshold:
                 volatility_detected = True
-        
+
         # Check if orders should resume (NATR dropped below limit)
         if self._previous_natr_exceeded and not natr_exceeded_limit:
             self.logger().info(
                 f"[NATR Upper Limit] NATR ({current_natr_percentage:.4f}%) has dropped below upper limit "
                 f"({self.config.natr_upper_limit:.2f}%). Resuming new order placement."
             )
-        
+
         # Update previous state
         self._previous_natr_exceeded = natr_exceeded_limit
-        
+
         # Calculate RSI to determine buying vs selling pressure
         rsi = ta.rsi(candles["close"], length=self.config.rsi_length)
-        
+
         # Check if RSI calculation returned None or invalid result
         if rsi is None:
             self.logger().warning("RSI calculation returned None. Using default value.")
@@ -289,21 +295,24 @@ class PMMDynamicController(MarketMakingControllerBase):
             current_rsi = 50.0  # Default neutral RSI
         else:
             current_rsi = rsi.iloc[-1]
-            
+
             # Handle NaN or invalid RSI
             if pd.isna(current_rsi) or current_rsi <= 0 or current_rsi >= 100:
                 current_rsi = 50.0  # Default neutral RSI
-        
+
+        # Print RSI value
+        self.logger().info(f"[RSI] Current RSI: {current_rsi:.2f}")
+
         # Determine pressure direction based on RSI
         buying_pressure = current_rsi > self.config.rsi_buying_threshold
         selling_pressure = current_rsi < self.config.rsi_selling_threshold
-        
+
         # Calculate spread adjustments based on volatility and direction
         base_spread_adjustment = Decimal(str(self.config.volatility_spread_increment_pct)) / Decimal("100") if volatility_detected else Decimal("0")
-        
+
         # Apply asymmetric spread adjustments based on RSI direction
         asymmetric_multiplier = Decimal(str(self.config.rsi_asymmetric_multiplier))
-        
+
         if volatility_detected:
             if buying_pressure:
                 # High volatility + Buying pressure = Protect sell side more
@@ -325,7 +334,7 @@ class PMMDynamicController(MarketMakingControllerBase):
             buy_spread_adjustment = Decimal("0")
             sell_spread_adjustment = Decimal("0")
             pressure_direction = "None"
-        
+
         # Reference price should be from the trading pair (ALI-USDT), not from volatility reference pair (ETH-USDT)
         # Get the current price for the actual trading pair
         from hummingbot.core.data_type.common import PriceType
@@ -343,7 +352,7 @@ class PMMDynamicController(MarketMakingControllerBase):
                 trading_pair_candles = self.market_data_provider.get_candles_df(
                     connector_name=self.config.candles_connector,
                     trading_pair=self.config.trading_pair,
-                                                           interval=self.config.interval,
+                    interval=self.config.interval,
                     max_records=1
                 )
                 if trading_pair_candles is not None and len(trading_pair_candles) > 0:
@@ -352,15 +361,15 @@ class PMMDynamicController(MarketMakingControllerBase):
                     # Last resort: use ETH price (wrong but better than crashing)
                     reference_price = candles["close"].iloc[-1]
                     self.logger().error(
-                        f"Using volatility reference pair price as fallback. "
-                        f"This may cause incorrect order prices!"
+                        "Using volatility reference pair price as fallback. "
+                        "This may cause incorrect order prices!"
                     )
             except Exception as e2:
                 self.logger().error(
                     f"Critical: Cannot get reference price: {str(e2)}. Using ETH price as fallback."
                 )
                 reference_price = candles["close"].iloc[-1]
-        
+        self.logger().info(f"[Reference Price] Reference price: {reference_price}")
         # Log only when volatility is detected or when status changes (reduces log spam)
         if volatility_detected or natr_exceeded_limit or (self._previous_natr_exceeded != natr_exceeded_limit):
             self.logger().info(
@@ -368,8 +377,8 @@ class PMMDynamicController(MarketMakingControllerBase):
                 f"RSI: {current_rsi:.1f} | "
                 f"Volatility: {'Detected' if volatility_detected else 'Normal'} | "
                 f"Direction: {pressure_direction} | "
-                f"Buy Adj: {float(buy_spread_adjustment)*100:.2f}% | "
-                f"Sell Adj: {float(sell_spread_adjustment)*100:.2f}% | "
+                f"Buy Adj: {float(buy_spread_adjustment) * 100:.2f}% | "
+                f"Sell Adj: {float(sell_spread_adjustment) * 100:.2f}% | "
                 f"Orders: {'STOPPED' if natr_exceeded_limit else 'ACTIVE'}"
             )
         
@@ -379,7 +388,7 @@ class PMMDynamicController(MarketMakingControllerBase):
         candles["volatility_detected"] = volatility_detected
         candles["current_rsi"] = current_rsi
         candles["pressure_direction"] = pressure_direction
-        
+
         self.processed_data = {
             "reference_price": Decimal(reference_price),
             "buy_spread_adjustment": buy_spread_adjustment,
@@ -395,27 +404,27 @@ class PMMDynamicController(MarketMakingControllerBase):
         Uses separate buy and sell spread adjustments based on RSI direction.
         """
         from hummingbot.core.data_type.common import TradeType
-        
+
         level = self.get_level_from_level_id(level_id)
         trade_type = self.get_trade_type_from_level_id(level_id)
         spreads, amounts_quote = self.config.get_spreads_and_amounts_in_quote(trade_type)
         reference_price = Decimal(self.processed_data["reference_price"])
-        
+
         # Get base spread from config (as percentage, e.g., 0.5 = 0.5%)
         base_spread_pct = Decimal(spreads[int(level)]) / Decimal("100")
-        
+
         # Get appropriate spread adjustment based on trade type
         if trade_type == TradeType.BUY:
             spread_adjustment = Decimal(self.processed_data["buy_spread_adjustment"])
         else:  # TradeType.SELL
             spread_adjustment = Decimal(self.processed_data["sell_spread_adjustment"])
-        
+
         spread_in_pct = base_spread_pct + spread_adjustment
-        
+
         # Calculate order price
         side_multiplier = Decimal("-1") if trade_type == TradeType.BUY else Decimal("1")
         order_price = reference_price * (1 + side_multiplier * spread_in_pct)
-        
+
         return order_price, Decimal(amounts_quote[int(level)]) / order_price
 
     def get_executor_config(self, level_id: str, price: Decimal, amount: Decimal):
@@ -443,6 +452,6 @@ class PMMDynamicController(MarketMakingControllerBase):
             # Note: This method is called continuously, so orders will resume
             # automatically when natr_exceeded_limit becomes False
             return []
-        
+
         # Call parent method for normal behavior when NATR is within limits
         return super().get_levels_to_execute()
