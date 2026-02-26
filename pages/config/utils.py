@@ -25,8 +25,25 @@ def get_candles(connector_name="binance", trading_pair="BTC-USDT", interval="1m"
         interval=interval
     )
     
-    # Convert the response to DataFrame (response is a list of candles)
+    # Normalize response: API may return a list of candle dicts, a single dict (error or one row), or empty
+    if isinstance(candles, dict):
+        if "error" in candles:
+            return pd.DataFrame()
+        # Single row (all scalar values) — wrap in list so DataFrame gets one row
+        candles = [candles]
+    if not candles:
+        return pd.DataFrame()
+    
     df = pd.DataFrame(candles)
-    if not df.empty and 'timestamp' in df.columns:
-        df.index = pd.to_datetime(df.timestamp, unit='s')
+    if df.empty:
+        return df
+    # Normalize column names to lowercase (API may return e.g. High, Low, Close)
+    df.columns = df.columns.str.lower().str.strip()
+    # Map common alternate OHLC names to standard (open, high, low, close)
+    ohlc_rename = {"o": "open", "h": "high", "l": "low", "c": "close"}
+    for alt, standard in ohlc_rename.items():
+        if alt in df.columns and standard not in df.columns:
+            df = df.rename(columns={alt: standard})
+    if "timestamp" in df.columns:
+        df.index = pd.to_datetime(df.timestamp, unit="s")
     return df

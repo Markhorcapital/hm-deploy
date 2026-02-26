@@ -62,8 +62,12 @@ with st.expander("Visualizing PMM Dynamic Indicators", expanded=True):
         row_heights=[0.5, 0.2, 0.2, 0.1]
     )
     
-    # Row 1: Candlestick
-    add_traces_to_fig(fig, [get_candlestick_trace(candles)], row=1, col=1)
+    # Row 1: Candlestick (only if OHLC columns present)
+    ohlc_cols = ["open", "high", "low", "close"]
+    if not candles.empty and all(c in candles.columns for c in ohlc_cols):
+        add_traces_to_fig(fig, [get_candlestick_trace(candles)], row=1, col=1)
+    else:
+        fig.add_trace(go.Scatter(x=[], y=[], name="No candle data"), row=1, col=1)
     
     # Row 2: NATR with threshold and upper limit lines
     natr_percentage = natr * 100  # Convert to percentage for display

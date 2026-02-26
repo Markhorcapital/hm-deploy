@@ -7,6 +7,15 @@ def get_pmm_dynamic_indicators(df, natr_length, rsi_length, volatility_threshold
     Get NATR and RSI indicators for PMM Dynamic visualization.
     Returns NATR, RSI, volatility_detected, and natr_exceeded_limit flags.
     """
+    required = ["high", "low", "close"]
+    if df.empty or not all(c in df.columns for c in required):
+        n = len(df) if not df.empty else 0
+        return (
+            pd.Series([0.01] * n),
+            pd.Series([50.0] * n),
+            pd.Series([False] * n),
+            pd.Series([False] * n),
+        )
     # Calculate NATR
     natr_raw = ta.natr(df["high"], df["low"], df["close"], length=natr_length)
     

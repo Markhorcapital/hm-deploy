@@ -130,6 +130,9 @@ services:
       - ./bots:/hummingbot-api/bots
       - /var/run/docker.sock:/var/run/docker.sock
       - /home/ec2-user/workspace/hummingbot/hummingbot/connector/exchange/crypto_com:/opt/conda/envs/hummingbot-api/lib/python3.12/site-packages/hummingbot/connector/exchange/crypto_com
+      - /home/ec2-user/workspace/hummingbot/hummingbot/connector/exchange/gemini:/opt/conda/envs/hummingbot-api/lib/python3.12/site-packages/hummingbot/connector/exchange/gemini
+      # Mount core/utils so estimate_fee.py lazy-import fix is used (avoids circular import when gemini loads)
+      - /home/ec2-user/workspace/hummingbot/hummingbot/core/utils:/opt/conda/envs/hummingbot-api/lib/python3.12/site-packages/hummingbot/core/utils
     env_file:
       - .env
     environment:
