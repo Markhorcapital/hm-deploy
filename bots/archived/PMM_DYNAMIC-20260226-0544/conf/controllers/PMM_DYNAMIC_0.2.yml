@@ -1,0 +1,45 @@
+buy_amounts_pct:
+- 0.2
+- 0.8
+buy_spreads:
+- 1.0
+- 2.0
+candles_config: []
+candles_connector: gate_io
+candles_trading_pair: ALI-USDT
+connector_name: gate_io
+controller_name: pmm_dynamic
+controller_type: market_making
+cooldown_time: 3600.0
+executor_refresh_time: 3600.0
+id: PMM_DYNAMIC_0.2
+interval: 15m
+leverage: 1
+manual_kill_switch: false
+natr_length: 14
+natr_upper_limit: 10.0
+position_mode: ONEWAY
+position_rebalance_threshold_pct: 0.05
+rsi_asymmetric_multiplier: 1.5
+rsi_buying_threshold: 60.0
+rsi_length: 14
+rsi_selling_threshold: 40.0
+sell_amounts_pct:
+- 0.2
+- 0.8
+sell_spreads:
+- 1.0
+- 2.0
+skip_rebalance: true
+stop_loss: 0.05
+take_profit: 0.02
+take_profit_order_type: 2
+time_limit: 43200
+total_amount_quote: 100
+trading_pair: ALI-USDT
+trailing_stop:
+  activation_price: 0.018
+  trailing_delta: 0.002
+volatility_reference_pair: ETH-USDT
+volatility_spread_increment_pct: 1.0
+volatility_threshold: 1.0

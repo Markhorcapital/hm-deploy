@@ -1,0 +1,5 @@
+candles_config: []
+controllers_config:
+- PMM_DYNAMIC_0.2.yml
+markets: {}
+script_file_name: v2_with_controllers.py

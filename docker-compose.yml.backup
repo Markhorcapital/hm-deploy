@@ -9,7 +9,7 @@ services:
       - BACKEND_API_HOST=hummingbot-api
       - BACKEND_API_PORT=8000
       - BACKEND_API_USERNAME=admin
-      - BACKEND_API_PASSWORD=nHXseC!tjianS3ze
+      - BACKEND_API_PASSWORD=admin
     volumes:
       - ./credentials.yml:/home/dashboard/credentials.yml
       - ./pages:/home/dashboard/frontend/pages
@@ -23,6 +23,7 @@ services:
     volumes:
       - ./bots:/hummingbot-api/bots
       - /var/run/docker.sock:/var/run/docker.sock
+      # - /Users/zia/Downloads/Markhor/markhorHB/hummingbot/hummingbot/connector/exchange/crypto_com:/opt/conda/envs/hummingbot-api/lib/python3.12/site-packages/hummingbot/connector/exchange/crypto_com
     env_file:
       - .env
     environment:
@@ -92,7 +93,7 @@ networks:
     driver: bridge
 
 volumes:
-  emqx-data: { }
-  emqx-log: { }
-  emqx-etc: { }
-  postgres-data: { }
+  emqx-data: {}
+  emqx-log: {}
+  emqx-etc: {}
+  postgres-data: {}
