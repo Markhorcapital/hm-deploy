@@ -33,9 +33,9 @@ The Config module provides a centralized interface for creating and managing tra
    - Trade entry/exit rules
 
 6. **PMM Dynamic** (`/pmm_dynamic`)
-   - Dynamic Pure Market Making configuration
-   - Spread and price multipliers based on market conditions
-   - Advanced inventory risk parameters
+   - DEX/CEX asymmetric market making (Uniswap V3 TWAP + CEX mid)
+   - Regime A/B quoting with hysteresis
+   - DEX feed, regime, and spread configuration
 
 7. **PMM Simple** (`/pmm_simple`)
    - Basic Pure Market Making strategy
@@ -119,7 +119,7 @@ The Config module provides a centralized interface for creating and managing tra
 
 ### Shared Components
 - `user_inputs.py`: Reusable input components across strategies
-- `spread_and_price_multipliers.py`: Dynamic pricing components
+- `regime_preview.py`: DEX/CEX regime and quote preview helpers (PMM Dynamic)
 - Configuration templates and presets
 
 ## State Management Approach
